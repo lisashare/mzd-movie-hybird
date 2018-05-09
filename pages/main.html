@@ -5,13 +5,177 @@
 		<meta charset="UTF-8">
 		<title></title>
 		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
-		<link href="../../../css/mui.min.css" rel="stylesheet" />
+		<link href="../css/mui.min.css" rel="stylesheet" />
+		<link rel="stylesheet" type="text/css" href="../css/swiper.min.css"/>
+		<style>
+			/*banner样式开始*/
+			.banner .swiper-wrapper {
+			height: 2.1094rem;
+			}
+			.banner .img-box {
+				width: 100%;
+				height: 2.1094rem;
+			}
+			/*banner样式结束*/
+			.movie-item{
+			width: 1rem;
+			float: left;
+			margin: 0px 0.05rem;
+		}
+		.movie-item  .img-box{
+			width: 1rem;
+			height: 1.4rem;
+			display: flex;justify-content: center;align-items: center;	
+		}
+		.movie-item .title {
+			color: #333;
+			text-align: center;
+			width: 100%;
+			
+		}
+		.movie-box .mui-scroll-wrapper {
+			position: relative;
+			height: 1.6rem;
+		}
+		.movie-box .mui-scroll{
+			overflow: hidden;
+			width: 8.8rem;
+		}
+		</style>
+	</head>
+	<script type="text/javascript">
+		document.documentElement.style.fontSize = document.documentElement.clientWidth / 3.75 + 'px'
+		window.onresize = function  () {
+			document.documentElement.style.fontSize = document.documentElement.clientWidth / 3.75 + 'px'
+		}
+	</script>
 	</head>
 
 	<body>
-		<script src="../../../js/mui.min.js"></script>
+		<div id="app">
+			<my-banner></my-banner>
+			<my-movie-box v-for = "type in types" :key = "type.id" :info = "type"></my-movie-box>
+		</div>
+		<!--banner组件-->
+		<template id="my-banner">
+			<div ref="el" class="swiper-container banner">
+				<div class="swiper-wrapper">
+					<div class="swiper-slide" v-for = "item in billboards" :key="item.id">
+						<div class="img-box img-loading">
+							<img width="100%" :src="item.imageUrl" alt="" />
+						</div>
+					</div>
+				</div>
+				<div class="swiper-pagination"></div>
+			</div>
+		</template>
+		<!--banner组件结束-->
+		
+		<!--数据列表 开始-->
+		<template id="my-movie-box">
+			<div class="mui-card movie-box">
+				<div class="mui-card-header">{{info.title}}</div>
+				<div class="mui-card-content">
+					<div class="mui-card-content-inner">
+						<div class="mui-scroll-wrapper" ref="wrapper">
+							<div class="mui-scroll">
+								<my-movie-item
+									v-for = "item in movies"
+									:key = "item.id"
+									:item = "item"
+								></my-movie-item>						
+								
+							</div>
+						</div>
+											
+					</div>
+				</div>
+			</div>
+		</template>
+		<template id="my-movie-item">
+			<div class=" movie-item">
+				<div class="img-box img-loading">
+					<img :src="item.images.medium" alt="" width="100%" />					
+				</div>
+				<h5 class="title ellipsis">{{item.title}}</h5>
+			</div>
+		</template>
+		<!--数据列表 结束-->
+		
+		<!--轮播图 虽然都是打包在文件里面，不过都是本地的加载也很快-->
+		<script src="../js/swiper.min.js" type="text/javascript" charset="utf-8"></script>
+		<!--vue-->
+		<script src="../js/vue.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../js/mui.min.js"></script>
 		<script type="text/javascript">
 			mui.init()
+			
+			//banner组件 
+			Vue.component('my-banner', {
+				template: '#my-banner',
+				data () {
+					return {
+						billboards: []
+					}
+				},
+				created () {
+					mui.ajax('https://m.maizuo.com/v4/api/billboard/home',{
+						data: {__t: new Date().getTime()},
+						success:(results) => {						
+							this.billboards = results.data.billboards
+							Vue.nextTick(() => {
+								new Swiper(this.$refs.el, {
+									pagination: {el: '.swiper-pagination'}
+								})
+							})
+						}
+					})
+				}
+			})
+			//数据列表  可以以借用mui 
+			Vue.component('my-movie-box', {
+				template: '#my-movie-box',
+				props: ['info'],
+				data () {
+					return {
+						movies: []
+					}
+				},
+				created () {
+					mui.ajax('https://api.douban.com/v2/movie/'+this.info.type,{
+						data: {count: 8},
+						success:(results) => {						
+							this.movies = results.subjects	
+							//实例化scroll
+							Vue.nextTick(() => {
+								mui(this.$refs.wrapper).scroll({
+									scrollY: false, //是否竖向滚动
+ 									scrollX: true,
+ 									indicators:false,
+									deceleration: 0.0005 //flick 减速系数，系数越大，滚动速度越慢，滚动距离越小，默认值0.0006
+								});
+							})
+						}
+					})
+				},
+				components: {
+					'my-movie-item': {
+						template: '#my-movie-item',
+						props: ['item']
+					}
+				}
+			})
+			new Vue({//每一个项目都是从一个vue实例开始的
+				el: '#app',
+				data: {
+					types: [
+						{id: 1, title: '正在热映', type: 'in_theaters'},
+						{id: 2, title: '即将上映', type: 'coming_soon'},
+						{id: 3, title: 'Top250', type: 'top250'}
+					]
+				}
+			})
+			
 		</script>
 	</body>
 

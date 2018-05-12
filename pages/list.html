@@ -33,7 +33,7 @@
 			<div class="bg-box"></div>
 			<!--头部的搜索-->
 			<header class="mui-bar mui-bar-nav common-header">
-			    <a class="mui-icon mui-icon-search mui-pull-right"></a>
+			    <a class="search mui-icon mui-icon-search mui-pull-right"></a>
 			</header>
 			<!--头部选项卡-->
 			<div class="mui-segmented-control control-group">
@@ -85,14 +85,21 @@
 				mui.fire( contentWebview, 'change-type', { type: targetType } )
 				activeType = targetType			
 			})
-			
-			//点击回到顶部，控制list-conte回到顶部
-//			mui('body').on('tap', '.back-top', function  () {
-//				if ( !contentWebview ) {
-//					contentWebview = plus.webview.getWebviewById('list-content.html')
-//				}
-//				contentWebview.evalJS("mui('#pullrefresh').pullRefresh().scrollTo(0,0,100)");
-//			})
+			//点击按钮打开搜索页
+			mui('.common-header').on('tap', '.mui-icon-search', function (e) {
+				mui.openWindow({
+				    url:'search.html',
+				    id:'search.html',
+				    styles:{
+				      top:'0px',//新页面顶部位置
+				      bottom:'0px',//新页面底部位置
+				    },
+				    waiting:{
+				      autoShow:false,//自动显示等待框，默认为true
+				    }
+				})
+			})
+
 			
 		</script>
 	</body>

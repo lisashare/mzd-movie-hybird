@@ -20,69 +20,113 @@
 	<body>
 		<!--底部的选项-->
 		<nav class="mui-bar mui-bar-tab">
-			<a id="defaultTab" class="mui-tab-item mui-active" href="tab-webview-subpage-about.html">
+			<a id="defaultTab" class="mui-tab-item mui-active" href="main.html">
 				<span class="mui-icon mui-icon-home"></span>
 				<span class="mui-tab-label">首页</span>
 			</a>
-			<a class="mui-tab-item" href="tab-webview-subpage-chat.html">
+			<a class="mui-tab-item" href="list.html">
 				<span class="mui-icon mui-icon-list"><span class="mui-badge">9</span></span>
 				<span class="mui-tab-label">列表</span>
 			</a>
-			<a class="mui-tab-item" href="tab-webview-subpage-contact.html">
+			<a class="mui-tab-item" href="mine.html">
 				<span class="mui-icon mui-icon-contact"></span>
 				<span class="mui-tab-label">我的</span>
 			</a>
-		
 		</nav>
-		<script src="../js/mui.min.js"></script>
+		<script src="./js/mui.min.js"></script>
 		<script type="text/javascript" charset="utf-8">
-			 //mui初始化
-			mui.init();
-			var subpages = ['tab-webview-subpage-about.html', 'tab-webview-subpage-chat.html', 'tab-webview-subpage-contact.html', 'tab-webview-subpage-setting.html'];
-			var subpage_style = {
-				top: '45px',
-				bottom: '51px'
-			};
+			//mui初始化   蒙！
+			//根据变量名、方法名猜测用处
+			//没有看懂的，先放过。结合使用情况才来判断
+			//如果碰到能查阅api一定要马上查阅
+			//要发散思维，根据较小的部分获取较大量的信息
 			
+			//初始化，一般情况下可以在这个init里传入一些参数实现初始化的配置
+			mui.init();	
+			
+			// 子页面们 ，里面存放的是路径、名字
+			var subpages = ['main.html', 'list.html', 'mine.html'];
+
+			//子窗口的样式 ！！！
+			var subpage_style = {				
+				top: '0px', //距离顶部
+				bottom: '51px',
+			};
+
+			if ( mui.os.ios ) {
+				subpage_style.bounce = 'vertical'
+			}
+
+		
+
+			//用来记录，都哪些界面已经以动画的形式显示过了
 			var aniShow = {};
 			
-			 //创建子页面，首个选项卡页面显示，其它均隐藏；
+						
+			//创建子页面，首个选项卡页面显示，其它均隐藏；
+			// plusReady里的回调函数会在plus准备好的时候执行（当我们在真机运行的时候）
 			mui.plusReady(function() {
+				//控制只能竖屏
+				plus.screen.lockOrientation("portrait-primary"); 
+				//获取当前的窗口，其实也就是主窗口
 				var self = plus.webview.currentWebview();
-				for (var i = 0; i < 4; i++) {
+				//创建子页面
+				for (var i = 0; i < subpages.length; i++) {
+					//?????
 					var temp = {};
-					var sub = plus.webview.create(subpages[i], subpages[i], subpage_style);
-					if (i > 0) {
+					//创建子窗口， url， id， styles
+					var sub = plus.webview.create('./pages/'+subpages[i], subpages[i], subpage_style);
+					
+					if (i > 0) {//不是第一个
+						//使其隐藏
+						// 如果我们创建窗口，创建之后窗口自动显示
 						sub.hide();
-					}else{
+					}else{//第一个
 						temp[subpages[i]] = "true";
+//						{
+//							'main.html':"true"
+//						}
+						// $.extend Object.assign
 						mui.extend(aniShow,temp);
+//						{
+//							'main.html': 'true'
+//						}
 					}
+					//放入到主窗口
 					self.append(sub);
 				}
+				
 			});
 			 //当前激活选项
-			var activeTab = subpages[0];
-			var title = document.getElementById("title");
-			 //选项卡点击事件
+			var activeTab = subpages[0];//main.html
+			
+//			var title = document.getElementById("title");
+			 //选项卡点击事件 事件委托
+			 //点击底部的a标签的时候
 			mui('.mui-bar-tab').on('tap', 'a', function(e) {
-				var targetTab = this.getAttribute('href');
+				//找到这个a标签所对应的要切换的webview里面页面的地址
+				var targetTab = this.getAttribute('href');//main.html list.html
+				//如果要跳转已经是当前的了，那就不做任何操作了
 				if (targetTab == activeTab) {
 					return;
 				}
 				//更换标题
-				title.innerHTML = this.querySelector('.mui-tab-label').innerHTML;
+//				title.innerHTML = this.querySelector('.mui-tab-label').innerHTML;
+				
 				//显示目标选项卡
 				//若为iOS平台或非首次显示，则直接显示
+				
+				//如果是ios，直接显示，没有动画，如果是Android，只有首次显示的时候会有动画
 				if(mui.os.ios||aniShow[targetTab]){
-					plus.webview.show(targetTab);
+					plus.webview.show(targetTab);//直接显示！
 				}else{
 					//否则，使用fade-in动画，且保存变量
 					var temp = {};
 					temp[targetTab] = "true";
-					mui.extend(aniShow,temp);
-					plus.webview.show(targetTab,"fade-in",300);
+					mui.extend(aniShow,temp);					
+					plus.webview.show(targetTab,"fade-in",300);//使用动画的形式去显示
 				}
+				
 				//隐藏当前;
 				plus.webview.hide(activeTab);
 				//更改当前活跃的选项卡

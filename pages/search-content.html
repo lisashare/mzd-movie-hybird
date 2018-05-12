@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<title>Hello MUI</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1,maximum-scale=1,user-scalable=no">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+		<link rel="stylesheet" href="../css/mui.min.css">
+	</head>
+	<script type="text/javascript">
+		document.documentElement.style.fontSize = document.documentElement.clientWidth / 3.75 + 'px'
+		window.onresize = function  () {
+			document.documentElement.style.fontSize = document.documentElement.clientWidth / 3.75 + 'px'
+		}
+	</script>
+	<style>
+		.movie-content {
+			padding: 10px;padding-bottom: 0px;
+		}
+		.movie-content:empty {
+			padding-top: 0px;
+		}
+		.movie-item {
+			padding: 10px 10px;
+			background: #fff;
+			border-bottom: 1px dashed #ccc;
+			
+		}
+		.movie-item a {
+			width: 100%;height: 100%;
+			display: flex;
+		}
+		.movie-item a .img-box {
+			width: 0.6rem;
+			height: 0.84rem;
+			flex-shrink: 0;
+		}
+		.movie-item .info-box {
+			width: 2.25rem;
+			flex-grow: 1;flex-shrink: 1;
+			padding-left: 0.2rem;
+			position: relative;
+			display: flex;
+			flex-flow: column;
+			justify-content: space-around;
+			
+		}
+		.movie-item .info-box p {
+			margin: 0;
+		}
+		.movie-item .info-box .actors {
+			width: 90%;
+			
+		}
+		.movie-item .info-box .grade {
+			position: absolute;
+			right: 10px;top: 0px;
+			font-size: 20px;
+			color: #007aff;
+		}
+		
+		.movie-item .info-box span {
+			display: inline-block;padding-left: 5px;
+		}
+		
+		.back-top {
+			position: fixed;
+			right: 15px;
+			bottom: 15px;
+			height: 50px; width: 50px;
+			background: #333333;color: #fff;text-align: center;line-height: 50px;	
+			z-index: 999;border-radius: 50%;	
+		}
+	</style>
+	<body>
+		<!--下拉刷新容器-->
+		<div id="pullrefresh" class="mui-content mui-scroll-wrapper">
+			<div class="mui-scroll">
+				<!--数据列表-->
+				<ul class="movie-content mui-table-view mui-table-view-chevron">
+					<movie-item
+						v-for = "movie in movies"
+						:key = "movie.id"
+						:movie = "movie"
+					></movie-item>
+				</ul>
+				
+			</div>
+			<div @tap = "backTop" v-if = "isBackShow" class="back-top"><i class="mui-icon mui-icon-arrowup"></i></div>
+		</div>
+		
+		<template id="movie-item">
+			<li class="movie-item">
+				<a>
+					<div class="img-box img-loading">
+						<img width="100%" :src="movie.images.medium" alt="" />
+					</div>
+					<div class="info-box">
+						<h4 class="title">{{movie.title}}</h4>
+						<p class="actors ellipsis">主演：
+							<span v-for = "item in movie.casts" :key = "item.id">{{item.name}}</span>					
+						</p>
+						<p class="genres">类别： 
+							<span v-for = "(item, i) in movie.genres" :key = "i">{{item}}</span>	
+						</p>
+						<div v-if = "type !== 'coming_soon'" class="grade">{{movie.rating.average ||　''}}</div>
+					</div>
+				</a>
+			</li>
+		</template>
+		
+		<script src="../js/mui.min.js"></script>
+		<script src="../js/vue.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../js/zepto_1.1.3.js" type="text/javascript" charset="utf-8"></script>
+		<script>
+			//要做点击list里的按钮控制list-content进行切换，也就说我们要进行的是窗口间的通信
+			//窗口间的通信： 在A窗口里给window绑定一个事件，在B窗口里通过mui.fire去触发这个事件
+			//在B窗口中获取到A窗口的窗口对象，执行evalJS，在这个方法中传入的字符串格式的js代码就会在A窗口中执行	
+			
+			//电影item的组件
+			Vue.component('movie-item', {
+				template: '#movie-item',
+				props: ['movie']
+			})
+			
+			//根实例
+			new Vue({
+				el: '#pullrefresh',
+				data: {
+					movies: [],//用来存放电影数据
+					q: '',   //输入框关键字
+					tag: '', //输入框关键字
+					count: 8,//每次获取几条
+					start: 0,//从哪里开始获取
+					isBackShow: false
+				},
+				mounted () {
+					mui.init({//配置的mui的初始化
+						pullRefresh: {//拉动刷新的相关配置
+							container: '#pullrefresh',
+							down: {//下拉刷新
+								callback: this.pulldownRefresh
+							},
+							up: {//上拉加载
+								auto:false,
+								contentrefresh: '正在加载...',
+								callback: this.pullupRefresh
+							}
+						}
+					});
+					//监听滚动距离		
+				   this.listenScroll();				
+				},
+				methods: {
+					//专门用来获取数据
+					getMovies ({start, count, callback}) {	
+						//当下拉刷新的时候需要传入start，可能为0
+						let _start = start !== undefined ?start : this.start
+						//显示等待框
+						this.showWaiting()						
+						//电影类型,传递过来的
+						let {  q, tag } = this
+						//搜索参数
+						let params = {count: count || this.count, start: _start}
+						if ( q ) {
+							params.q = q
+						}else { params.tag = tag }
+												
+						$.ajax({
+							url: 'https://api.douban.com/v2/movie/search',
+							data: params,
+							dataType: 'jsonp',
+							success:(results) => {
+//								console.log(results,111)
+								//将数据交由回调函数处理
+								callback(results)
+								//关闭等待框
+								this.closeWaiting()
+							}
+						})
+					},
+					showWaiting () {//显示等待框
+						if (mui.os.plus) {//如果是在手机上运行，使用原生的等待框显示
+							plus.nativeUI.showWaiting( '正在加载...' );
+						}else{
+							mui.toast('正在加载...', {duration: 5000}) 
+						}
+					},
+					closeWaiting () {//关闭等待框
+						if (mui.os.plus) {
+							plus.nativeUI.closeWaiting();
+						}else{
+							let toasts = Array.prototype.slice.call(mui('.mui-toast-container'))
+							toasts.forEach(item => {
+								item.remove()
+							})
+						}
+							
+					},
+					handlePullUp (results) {//接收到数据之后，处理上拉加载时插入数据的逻辑
+						this.movies = this.movies.concat(results.subjects)
+						this.start += this.count
+						Vue.nextTick(()=>{
+							//当数据更新完成后，rerender之后，停止上拉加载
+							mui('#pullrefresh').pullRefresh().endPullupToRefresh( this.start > results.total );							
+						})
+					},
+					handlePullDown (results) {//下拉刷新的逻辑函数，接收到新数据之后，需要对比，看看有哪些是新数据，将新数据放入到数据组里，否则做出其他动作				
+						//当前的前五条
+						let arr = this.movies.slice(0,5)
+						//判断新获取到的五条数据（results.subjects）里有没有不在当前的前五条里的
+						let newmovie = results.subjects.filter(movie => {
+							let isHas = arr.some(item => {
+								if (item.id === movie.id) {
+									return true
+								}
+								return false
+							})
+							if (!isHas) return true ;
+						})
+						//已经有新数据了
+						if ( newmovie.length ) {
+							this.movies = newmovie.concat(this.movies)
+							Vue.nextTick(function(){
+								mui('#pullrefresh').pullRefresh().endPulldownToRefresh();
+							})
+							return false
+						}
+						//显示没有更多了的提示
+						this.notHasNewToast()						
+						mui('#pullrefresh').pullRefresh().endPulldownToRefresh();						
+					},
+					notHasNewToast () {//已经是最新数据了的提示逻辑
+						if (mui.os.plus) {
+							plus.nativeUI.toast( '已经是最新的数据了', {verticalAlign: 'center'} );
+						}else {
+							mui.toast('已经是最新的数据了') 
+						}
+					},
+					pulldownRefresh () {//下拉刷新的逻辑						
+						this.getMovies({
+							start: 0,
+							count: 5,
+							callback: this.handlePullDown
+						})
+					},
+					pullupRefresh () {//上拉加载的逻辑
+						//获取数据
+						this.getMovies({callback: this.handlePullUp})
+					},
+					autoPullUpLoading () {//直接执行一次上拉加载
+						if (mui.os.plus) {
+							mui.plusReady(function() {
+								setTimeout(function() {
+									mui('#pullrefresh').pullRefresh().pullupLoading();
+								}, 10);
+			
+							});
+						} else {
+							mui.ready(function() {
+								mui('#pullrefresh').pullRefresh().pullupLoading();
+							});
+						}
+					},
+					changeWord (e) {//处理关键字切换的方法
+						this.q = e.detail.q
+						//重置start等到参数
+						this.start = 0;
+						this.movies = []
+						Vue.nextTick(() => {
+							//执行一次上拉加载去获取数据了
+							this.autoPullUpLoading()
+							//重置拉动刷新，因为在某一个里面如果已经没有更多数据了，切换到其他类型的时候也不能执行上架加载了
+							mui('#pullrefresh').pullRefresh().refresh(true);
+							//让区域滑动回到0的位置
+							mui('#pullrefresh').pullRefresh().scrollTo(0,0)
+						})
+					},
+					listenScroll () {//监听滚动的函数
+						document.querySelector('.mui-scroll-wrapper' ).addEventListener('scroll', (e) => { 
+							if ( e.detail.y < -300 ) {
+								if ( !this.isBackShow )  this.isBackShow = true;
+							}else{
+								if ( this.isBackShow )  this.isBackShow = false;
+							}
+				      		
+				    	}) 
+					},
+					backTop () {//回到顶部
+						mui('#pullrefresh').pullRefresh().scrollTo(0,0,100)
+					}
+				},
+				created () {
+					//在这里给window绑定好事件，等到其他窗口去触发这个事件
+					window.addEventListener('change-word',this.changeWord)
+				}
+			})
+
+		</script>
+	</body>
+
+</html>

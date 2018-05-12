@@ -5,13 +5,102 @@
 		<meta charset="UTF-8">
 		<title></title>
 		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
-		<link href="../../../css/mui.min.css" rel="stylesheet" />
+		<link href="../css/mui.min.css" rel="stylesheet" />
 	</head>
-
+	<script type="text/javascript">
+		document.documentElement.style.fontSize = document.documentElement.clientWidth / 3.75 + 'px'
+		window.onresize = function  () {
+			document.documentElement.style.fontSize = document.documentElement.clientWidth / 3.75 + 'px'
+		}
+	</script>
+	<style type="text/css">
+		.header-box .control-group {
+			position: absolute;
+			width: 70%;
+			left: 15%;
+			bottom: 0.3rem;
+			border-color: #fff;
+		}
+		.header-box .mui-control-item {
+			color: #fff;
+		    border-color: #fff;
+		    border-left: 1px solid #fff;
+		}	
+	</style>
 	<body>
-		<script src="../../../js/mui.min.js"></script>
+		<div class="header-box">
+			<!--背景图片-->
+			<div class="bg-box"></div>
+			<!--头部的搜索-->
+			<header class="mui-bar mui-bar-nav common-header">
+			    <a class="search mui-icon mui-icon-search mui-pull-right"></a>
+			</header>
+			<!--头部选项卡-->
+			<div class="mui-segmented-control control-group">
+				<a data-type = "in_theaters" class="mui-control-item mui-active" >正在热映</a>
+				<a data-type = "coming_soon" class="mui-control-item" >即将上映</a>
+				<a data-type = "top250" class="mui-control-item" >TOP250</a>
+			</div>
+		</div>
+		
+		<script src="../js/mui.min.js"></script>
 		<script type="text/javascript">
-			mui.init()
+			
+			mui.init({
+				gestureConfig:{//开始手势监听
+					doubletap:true//监听双击
+				},
+				subpages:[{//配置子页面
+					url:'list-content.html',
+					id:'list-content.html',
+					styles:{
+						top: RemReturnPixel(1.3), //子页面距离上部的距离
+						bottom: '0px',
+					}
+				}]
+			});
+		
+//			var contentWebview = null;
+//			document.querySelector('header').addEventListener('doubletap',function () {
+//				if(contentWebview==null){
+//					contentWebview = plus.webview.currentWebview().children()[0];
+//				}
+//				//
+//				contentWebview.evalJS("mui('#pullrefresh').pullRefresh().scrollTo(0,0,100)");
+//			});
+			
+			//点击类型按钮，触发list-content的事件来切换类型
+			let contentWebview = null
+			let activeType = 'in_theaters'
+			mui('.control-group').on('tap', 'a', function(){
+				let targetType = this.getAttribute('data-type')
+				if ( targetType === activeType ) {
+					return; 
+				}
+				if ( !contentWebview ) {
+					contentWebview = plus.webview.getWebviewById('list-content.html')
+				}
+				//可以去触发其他窗口的事件
+				//要触发的窗口，触发什么事件，传参数
+				mui.fire( contentWebview, 'change-type', { type: targetType } )
+				activeType = targetType			
+			})
+			//点击按钮打开搜索页
+			mui('.common-header').on('tap', '.mui-icon-search', function (e) {
+				mui.openWindow({
+				    url:'search.html',
+				    id:'search.html',
+				    styles:{
+				      top:'0px',//新页面顶部位置
+				      bottom:'0px',//新页面底部位置
+				    },
+				    waiting:{
+				      autoShow:false,//自动显示等待框，默认为true
+				    }
+				})
+			})
+
+			
 		</script>
 	</body>
 

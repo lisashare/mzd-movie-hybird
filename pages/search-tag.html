@@ -1,0 +1,76 @@
+<!doctype html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<link href="../css/mui.min.css" rel="stylesheet" />
+	</head>
+	<style>
+		body{
+			background: #fff;
+		}
+		.content {
+			padding: 10px;
+			position: absolute;left:0;right: 0;top: 0;bottom: 0;margin: auto;
+		}
+		.content .title {
+			color: #333;
+			font-size: 14px;
+		}
+		.close {
+			width: 40px;
+			height: 40px;
+			background: #333;
+			display: flex;justify-content: center;align-items: center;
+			color: #fff;
+			border-radius: 50%;
+			font-size: 40px;
+			position: absolute;
+			left: 0;right: 0;margin-left: auto;margin-right: auto;
+			bottom: 10px;
+		}
+		
+		.btn-box {
+			padding: 10px 0px;
+		}
+		.btn-box .mui-btn {
+			margin: 0px 5px 5px;
+		}
+	</style>
+	<body>
+		
+		<div class="content">
+			<h5 class="title">
+				选择你喜欢的
+			</h5>
+			<div class="btn-box">
+				<button 
+					v-for = "(tag, i) in tags" :key = "i"
+				 type="button" class="mui-btn mui-btn-danger">{{tag}}</button>
+			</div>
+			<!--关闭按钮-->
+			<div class="close">
+				<i class="mui-icon mui-icon-close"></i>
+			</div>
+		</div>
+		
+		
+		<script src="../js/mui.min.js"></script>
+		<script src="../js/vue.min.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript">
+			
+			new Vue({
+				el: '.content',
+				created () {
+					mui.init()
+				},
+				data: {
+					tags: ['喜剧','悲剧','爱情','动作','惊悚','科幻','动画']
+				}
+			})
+		</script>
+	</body>
+
+</html>

@@ -14,7 +14,7 @@
 		}
 	</script>
 	<style type="text/css">
-		/*头部背景*/
+		
 		.header-box .bg-box {
 			background-image: url(../images/search-header-bg.jpg);
 		}
@@ -29,10 +29,12 @@
 			height: 34px;
 		}
 		
-		.mui-input-group:after{		
+		.mui-input-group:after{
+			
 			visibility: hidden;
 		}
-		.mui-input-group:before{		
+		.mui-input-group:before{
+			
 			visibility: hidden;
 		}
 		.mui-search:after{
@@ -45,23 +47,18 @@
 	</style>
 	<body>
 		<div class="header-box">
-			<!--头部开始-->
 			<div class="bg-box"></div>
 			<header class="mui-bar mui-bar-nav common-header">
 			    <a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
-			    <!--tap点击事件-->
 			    <a @tap = "openTag" class="tag mui-icon mui-icon-bars mui-pull-right"></a>
-			    
 			    <h1 class="mui-title">搜你想搜的</h1>
 			</header>
-			<!--头部结束-->
-			<!--搜索开始 mui-->
+			
 			<form @submit.prevent = "search" class="mui-input-group form">
 			    <div class="mui-input-row mui-search">
 				    <input ref="inp" v-model = "q" type="search" class="mui-input-clear" placeholder="输入搜索关键字">
 				</div>
 			</form>
-			<!--搜索结束-->
 		</div>
 		
 		<script src="../js/mui.min.js"></script>
@@ -71,13 +68,11 @@
 			new Vue ({
 				el: '.header-box',
 				data: {
-					q: ''
+					q: '',tag: ''
 				},
 				contentWebview: null,
 				self: null,
-				tag: null,
 				created () {
-					//子页面的电影列表
 					mui.init({
 						subpages: [
 							{
@@ -92,16 +87,14 @@
 							}
 						]
 					})
-					//点击遮罩，监听关闭
+					//点击遮罩
 					let self = this.getSelf()
 					self.addEventListener('maskClick', () => {
-						this.tag.close()
-						mui.later(() => {
-							self.setStyle({
-								mask: 'none'
-							})
-						}, 210)
+						this.closeTag()
 					})
+					
+					window.addEventListener("close-tag", this.closeTag.bind(this) )
+					window.addEventListener("change-tag", this.changeTag.bind(this) )
 				},
 				methods: {
 					search () {
@@ -110,10 +103,23 @@
 						if ( !this.$options.contentWebview ) {
 							this.$options.contentWebview = plus.webview.getWebviewById('search-content.html')
 						}
-						mui.fire(this.$options.contentWebview, 'change-word', {q: q})
-						
+						mui.fire(this.$options.contentWebview, 'change-word', {type: 'q', value: q})
 						//搜索完成使input失去焦点，这样的话键盘就会消失
 						this.$refs.inp.blur()
+						this.tag = ''//防止search-tag接收到tag
+					},
+					changeTag (e) {//等待search-tag触发
+						this.tag = e.detail.tag
+						if ( !this.$options.contentWebview ) {
+							this.$options.contentWebview = plus.webview.getWebviewById('search-content.html')
+						}
+						mui.fire(this.$options.contentWebview, 'change-word', {type: 'tag', value: this.tag})
+						this.q = ''
+						
+						setTimeout(() => {//切换类型后，关闭类型窗口
+							this.closeTag()
+						}, 150)
+						
 					},
 					getSelf () {//获取当前窗口对象
 						if ( !this.$options.self ) {
@@ -139,9 +145,9 @@
 						},30)
 						
 					},
-					openTag () { //遮罩选择的弹出框
+					openTag () {
 						this.showMask()
-						this.tag = mui.openWindow({
+						this.tagWebview = mui.openWindow({
 						    url:'search-tag.html',
 						    id:'search-tag.html',
 						    styles:{
@@ -149,6 +155,7 @@
 						      bottom:'0px',//新页面底部位置
 						      zindex:2
 						    },
+						    extras: { tag: this.tag },//把当前的类型传过去
 						    show: {
 						    	aniShow:'slide-in-bottom',
 						    	duration:200
@@ -157,9 +164,21 @@
 						      autoShow:false,//自动显示等待框，默认为true
 						    }
 						})
+					},
+					closeTag () {
+						let self = this.getSelf()
+						this.tagWebview.close()
+						mui.later(() => {
+							self.setStyle({
+								mask: 'none'
+							})
+						}, 210)
 					}
 				}
-			})	
+			})
+			
+		
+			
 		</script>
 	</body>
 

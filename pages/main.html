@@ -7,17 +7,23 @@
 		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
 		<link href="../css/mui.min.css" rel="stylesheet" />
 		<link rel="stylesheet" type="text/css" href="../css/swiper.min.css"/>
-		<style>
-			/*banner样式开始*/
-			.banner .swiper-wrapper {
+	</head>
+	<script type="text/javascript">
+		document.documentElement.style.fontSize = document.documentElement.clientWidth / 3.75 + 'px'
+		window.onresize = function  () {
+			document.documentElement.style.fontSize = document.documentElement.clientWidth / 3.75 + 'px'
+		}
+	</script>
+	
+	<style type="text/css">
+		.banner .swiper-wrapper {
 			height: 2.1094rem;
-			}
-			.banner .img-box {
-				width: 100%;
-				height: 2.1094rem;
-			}
-			/*banner样式结束*/
-			.movie-item{
+		}
+		.banner .img-box {
+			width: 100%;
+			height: 2.1094rem;
+		}
+		.movie-item{
 			width: 1rem;
 			float: left;
 			margin: 0px 0.05rem;
@@ -41,22 +47,15 @@
 			overflow: hidden;
 			width: 8.8rem;
 		}
-		</style>
-	</head>
-	<script type="text/javascript">
-		document.documentElement.style.fontSize = document.documentElement.clientWidth / 3.75 + 'px'
-		window.onresize = function  () {
-			document.documentElement.style.fontSize = document.documentElement.clientWidth / 3.75 + 'px'
-		}
-	</script>
-	</head>
-
+	</style>
+	
 	<body>
 		<div id="app">
 			<my-banner></my-banner>
 			<my-movie-box v-for = "type in types" :key = "type.id" :info = "type"></my-movie-box>
+			
 		</div>
-		<!--banner组件-->
+		
 		<template id="my-banner">
 			<div ref="el" class="swiper-container banner">
 				<div class="swiper-wrapper">
@@ -69,9 +68,6 @@
 				<div class="swiper-pagination"></div>
 			</div>
 		</template>
-		<!--banner组件结束-->
-		
-		<!--数据列表 开始-->
 		<template id="my-movie-box">
 			<div class="mui-card movie-box">
 				<div class="mui-card-header">{{info.title}}</div>
@@ -93,24 +89,19 @@
 			</div>
 		</template>
 		<template id="my-movie-item">
-			<div class=" movie-item">
+			<div @tap = "openDetail(item.id)" class=" movie-item">
 				<div class="img-box img-loading">
 					<img :src="item.images.medium" alt="" width="100%" />					
 				</div>
 				<h5 class="title ellipsis">{{item.title}}</h5>
 			</div>
 		</template>
-		<!--数据列表 结束-->
-		
-		<!--轮播图 虽然都是打包在文件里面，不过都是本地的加载也很快-->
-		<script src="../js/swiper.min.js" type="text/javascript" charset="utf-8"></script>
-		<!--vue-->
-		<script src="../js/vue.min.js" type="text/javascript" charset="utf-8"></script>
 		<script src="../js/mui.min.js"></script>
+		<script src="../js/swiper.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../js/vue.min.js" type="text/javascript" charset="utf-8"></script>
 		<script type="text/javascript">
 			mui.init()
-			
-			//banner组件 
+			//banner组件
 			Vue.component('my-banner', {
 				template: '#my-banner',
 				data () {
@@ -132,7 +123,8 @@
 					})
 				}
 			})
-			//数据列表  可以以借用mui 
+			
+			
 			Vue.component('my-movie-box', {
 				template: '#my-movie-box',
 				props: ['info'],
@@ -146,7 +138,6 @@
 						data: {count: 8},
 						success:(results) => {						
 							this.movies = results.subjects	
-							//实例化scroll
 							Vue.nextTick(() => {
 								mui(this.$refs.wrapper).scroll({
 									scrollY: false, //是否竖向滚动
@@ -161,11 +152,16 @@
 				components: {
 					'my-movie-item': {
 						template: '#my-movie-item',
-						props: ['item']
+						props: ['item'],
+						methods: {
+							openDetail (id) {
+								openDetail(id)
+							}
+						}
 					}
 				}
 			})
-			new Vue({//每一个项目都是从一个vue实例开始的
+			new Vue({
 				el: '#app',
 				data: {
 					types: [
@@ -175,7 +171,6 @@
 					]
 				}
 			})
-			
 		</script>
 	</body>
 

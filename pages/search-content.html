@@ -93,7 +93,7 @@
 		</div>
 		
 		<template id="movie-item">
-			<li class="movie-item">
+			<li @tap = "openDetail(movie.id)" class="movie-item">
 				<a>
 					<div class="img-box img-loading">
 						<img width="100%" :src="movie.images.medium" alt="" />
@@ -131,8 +131,8 @@
 				el: '#pullrefresh',
 				data: {
 					movies: [],//用来存放电影数据
-					q: '',   //输入框关键字
-					tag: '', //输入框关键字
+					q: '',
+					tag: '',
 					count: 8,//每次获取几条
 					start: 0,//从哪里开始获取
 					isBackShow: false
@@ -155,13 +155,14 @@
 				   this.listenScroll();				
 				},
 				methods: {
+					openDetail : openDetail,//打开详情
 					//专门用来获取数据
 					getMovies ({start, count, callback}) {	
 						//当下拉刷新的时候需要传入start，可能为0
 						let _start = start !== undefined ?start : this.start
 						//显示等待框
 						this.showWaiting()						
-						//电影类型,传递过来的
+						//电影类型
 						let {  q, tag } = this
 						//搜索参数
 						let params = {count: count || this.count, start: _start}
@@ -174,7 +175,7 @@
 							data: params,
 							dataType: 'jsonp',
 							success:(results) => {
-//								console.log(results,111)
+								console.log(results,111)
 								//将数据交由回调函数处理
 								callback(results)
 								//关闭等待框
@@ -265,8 +266,14 @@
 							});
 						}
 					},
-					changeWord (e) {//处理关键字切换的方法
-						this.q = e.detail.q
+					changeWord (e) {//处理类型切换的方法
+						if ( e.detail.type === 'q' ) {
+							this.q = e.detail.value
+							this.tag = ''
+						}else {
+							this.tag = e.detail.value
+							this.q = ''
+						}
 						//重置start等到参数
 						this.start = 0;
 						this.movies = []

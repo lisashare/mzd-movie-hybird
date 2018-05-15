@@ -7,12 +7,205 @@
 		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
 		<link href="../css/mui.min.css" rel="stylesheet" />
 	</head>
-
+	<script type="text/javascript">
+		document.documentElement.style.fontSize = document.documentElement.clientWidth / 3.75 + 'px'
+		window.onresize = function  () {
+			document.documentElement.style.fontSize = document.documentElement.clientWidth / 3.75 + 'px'
+		}
+	</script>
+	<style>
+		.info-box {
+			height: 215px;
+			position: relative;
+		}
+		.info-box .bg-box {
+			position: absolute;left: 0;top: 0;
+			width: 100%;height: 100%;
+			background-image: url(../images/search-header-bg.jpg);
+			background-size: 100% 100%;
+			filter:blur(5px);
+		}
+		.info-content {
+			padding: 35px 0px 20px;
+			height: 100%;
+			position: relative;z-index: 999;
+			display: flex;
+			flex-flow: column;justify-content: space-around;align-items: center;
+		}
+		.head-img-box {
+			width: 0.8rem;height: 0.8rem;
+			border-radius: 50%;
+			overflow: hidden;
+			background: #fff;
+			border:5px solid #fff;
+			box-shadow: 0px 0px 10px #fff;
+		}
+		.head-img-box img {
+			width: 100%;height: 100%;
+		}
+	</style>
 	<body>
-		mine
+		<div class="info-box">
+			<div class="bg-box"></div>
+			<div class="info-content">
+				<div class="head-img-box">
+					<img  src="../images/user-photo.png" alt="" />
+				</div>
+				<h5>
+					<div class="user-info mui-hidden">
+						<button class=" username  mui-btn mui-btn-default">ergou</button>
+						<button class=" exit mui-btn mui-btn-success">注销</button>
+					</div>
+					<div class="login-box">
+						<button class="mui-btn mui-btn-danger">未登录</button>
+					</div>
+				</h5>
+			</div>
+		</div>
 		<script src="../js/mui.min.js"></script>
+		<script src="../js/zepto_1.1.3.js" type="text/javascript" charset="utf-8"></script>
 		<script type="text/javascript">
-			mui.init()
+			
+			
+			(function  (app) {
+				
+						
+				app.init = function() {
+					mui.init()
+					this.addEvent()
+					this.checkLogin()
+				}
+				
+				app.addEvent = function () {//添加事件
+					mui('.login-box').on('tap', 'button', this.turnLoginWebview)
+					mui('.user-info').on('tap', '.exit', this.exit.bind(this))
+					mui('.head-img-box').on('tap', 'img', this.changeHeadImg.bind(this))
+					window.addEventListener('logined', function  () {
+						app.afterLoginHandler()
+					})
+				}
+				//打开登陆窗口
+				app.turnLoginWebview = function () {
+					mui.openWindow({
+						url: 'login.html',
+						id: 'login.html',
+						styles: { top: '0px', bottom: '0px' }
+					})
+				}
+				app.getUserInfo = function () {//获取登陆信息
+					let userInfo = localStorage.userInfo?JSON.parse(localStorage.userInfo): null
+					return userInfo
+				}
+				
+				app.checkLogin = function  () {//检测登陆
+					let userInfo = this.getUserInfo()
+					if ( !userInfo ) {//没有登陆
+						app.beforeLoginHandler(userInfo)
+					}else {//登陆
+						app.afterLoginHandler()
+					}
+				}
+				
+				app.afterLoginHandler = function  (info) {//登陆后的操作
+					let userInfo = info
+					if ( !userInfo ) {
+						userInfo = this.getUserInfo()
+					}
+					
+					$('.bg-box').css({
+						backgroundImage: 'url('+userInfo.headimgurl+')'
+					})
+					$('.head-img-box img').prop('src', userInfo.headimgurl)
+					$('.user-info').removeClass('mui-hidden').find('.username').text(userInfo.nickname || userInfo.name)
+					
+					$('.login-box').addClass('mui-hidden')
+				}
+				app.beforeLoginHandler = function  () {//登录前的操作
+					$('.bg-box').css({
+						backgroundImage: 'url(../images/list-header-bg.jpg)'
+					})
+					$('.head-img-box img').prop('src', '../images/user-photo.png')
+					$('.login-box').removeClass('mui-hidden')
+					
+					$('.user-info').addClass('mui-hidden')
+				}
+				
+				app.exit = function  () { //注销
+					localStorage.removeItem('userInfo')
+					this.beforeLoginHandler()
+				}
+				
+				app.changeHeadImg = function  () {//点击头像更改头像
+					let userInfo = this.getUserInfo()
+					if ( !userInfo ) {//如果没登陆就去登陆
+						plus.nativeUI.confirm( '请登陆后再试试', (e) => {
+							if( e.index === 0 ) this.turnLoginWebview();							
+						}, {"title":"提示",
+			"buttons":["登陆","取消"]});
+						return false;
+					}
+					//如果登陆了，选择从相机或者相册中修改头像
+					//actionSheets上面的按钮
+					var actionbuttons=[{title:"拍照"},{title:"相册"}];
+					var actionstyle={cancel:"取消",buttons:actionbuttons};
+					plus.nativeUI.actionSheet(actionstyle, function(e){
+						switch ( e.index ) {
+							case 1: app.captureImageChangeHead() ;break;//拍照
+							case 2: app.choiceByGalleryChangeHead() ;break;//从相册选取
+							default: break;
+						}
+					});
+				}
+				
+				app.captureImageChangeHead  = function () {//拍照函数					
+					var cmr = plus.camera.getCamera();//获取摄像头
+					//获得相机支持的某种分辨率和格式
+					var res = cmr.supportedImageResolutions[0];
+					var fmt = cmr.supportedImageFormats[0];
+					//拍照
+					cmr.captureImage( function( path ){ 
+							app.movePictureToHead(path)
+						},
+						{resolution:res,format:fmt}
+					);					
+				}
+				app.choiceByGalleryChangeHead  = function () {//从相册选取					
+					plus.gallery.pick(function(path){//选取到图片然后处理
+						app.movePictureToHead(path)
+					})					
+				}
+				
+				
+		
+				//将获取的图片路径放到页面中
+				app.movePictureToHead = function(path){
+					//会根据路径找见对应的文件路径
+					plus.io.resolveLocalFileSystemURL(path, function(entry) { 
+						//真正的图片路径
+		                var s = entry.toLocalURL() + "?version=" + new Date().getTime(); 	                		                    
+						
+						//uploadHead(s); /*上传图片*/
+						
+						//更改头像
+						$(".head-img-box img").prop('src',s)
+						$(".bg-box").css('background-image','url('+s+')')
+						
+						//同步本地存储里的头像
+						let userInfo = app.getUserInfo()					
+						userInfo.headimgurl = s;					
+						localStorage.userInfo = JSON.stringify(userInfo)
+						
+						plus.device.vibrate( 5000 );
+						
+		            });
+				}
+				
+				
+				app.init()
+				
+			})(window.app = {})
+			
+			
 		</script>
 	</body>
 

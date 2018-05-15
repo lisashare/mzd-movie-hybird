@@ -90,12 +90,11 @@
 				</ul>
 				
 			</div>
-			<!--回到顶部按钮-->
 			<div @tap = "backTop" v-if = "isBackShow" class="back-top"><i class="mui-icon mui-icon-arrowup"></i></div>
 		</div>
-		<!--电影列表的模板-->
+		
 		<template id="movie-item">
-			<li class="movie-item">
+			<li @tap= "openDetail(movie.id)" class="movie-item">
 				<a>
 					<div class="img-box img-loading">
 						<img width="100%" :src="movie.images.medium" alt="" />
@@ -118,7 +117,7 @@
 		<script src="../js/vue.min.js" type="text/javascript" charset="utf-8"></script>
 		<script src="../js/zepto_1.1.3.js" type="text/javascript" charset="utf-8"></script>
 		<script>
-			//要做点击list里的按钮控制list-content进行切换，也就是说我们要进行的是窗口间的通信
+			//要做点击list里的按钮控制list-content进行切换，也就说我们要进行的是窗口间的通信
 			//窗口间的通信： 在A窗口里给window绑定一个事件，在B窗口里通过mui.fire去触发这个事件
 			//在B窗口中获取到A窗口的窗口对象，执行evalJS，在这个方法中传入的字符串格式的js代码就会在A窗口中执行	
 			
@@ -156,6 +155,7 @@
 				   this.listenScroll();				
 				},
 				methods: {
+					openDetail : openDetail,//打开详情
 					//专门用来获取数据
 					getMovies ({start, count, callback}) {	
 						//显示等待框
@@ -186,7 +186,7 @@
 					closeWaiting () {//关闭等待框
 						if (mui.os.plus) {
 							plus.nativeUI.closeWaiting();
-						}else{//移除提示
+						}else{
 							let toasts = Array.prototype.slice.call(mui('.mui-toast-container'))
 							toasts.forEach(item => {
 								item.remove()
@@ -196,7 +196,7 @@
 					},
 					handlePullUp (results) {//接收到数据之后，处理上拉加载时插入数据的逻辑
 						this.movies = this.movies.concat(results.subjects)
-						this.start += this.count //每次执行数据开始条数更新
+						this.start += this.count
 						Vue.nextTick(()=>{
 							//当数据更新完成后，rerender之后，停止上拉加载
 							mui('#pullrefresh').pullRefresh().endPullupToRefresh( this.start > results.total );							
@@ -259,7 +259,6 @@
 							});
 						}
 					},
-					
 					changeType (e) {//处理类型切换的方法
 						this.type = e.detail.type
 						//重置start等到参数
@@ -274,7 +273,7 @@
 							mui('#pullrefresh').pullRefresh().scrollTo(0,0)
 						})
 					},
-					listenScroll () {//监听滚动的函数，显示回到顶部按钮
+					listenScroll () {//监听滚动的函数
 						document.querySelector('.mui-scroll-wrapper' ).addEventListener('scroll', (e) => { 
 							if ( e.detail.y < -300 ) {
 								if ( !this.isBackShow )  this.isBackShow = true;
@@ -284,7 +283,7 @@
 				      		
 				    	}) 
 					},
-					backTop () {//回到顶部  在list里面，list-content会将其盖住
+					backTop () {//回到顶部
 						mui('#pullrefresh').pullRefresh().scrollTo(0,0,100)
 					}
 				},

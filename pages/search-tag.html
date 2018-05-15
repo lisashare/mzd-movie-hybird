@@ -34,6 +34,8 @@
 		
 		.btn-box {
 			padding: 10px 0px;
+			display: flex;justify-content: center;
+			flex-wrap: wrap;
 		}
 		.btn-box .mui-btn {
 			margin: 0px 5px 5px;
@@ -47,11 +49,13 @@
 			</h5>
 			<div class="btn-box">
 				<button 
+					@tap = "changeTag(tag)"
 					v-for = "(tag, i) in tags" :key = "i"
-				 type="button" class="mui-btn mui-btn-danger">{{tag}}</button>
+				 	type="button" class="mui-btn mui-btn-danger "
+				 	:class = "{'mui-btn-outlined': (activeTag !== tag)}"
+				 >{{tag}}</button>
 			</div>
-			<!--关闭按钮-->
-			<div class="close">
+			<div @tap = "closeTag" class="close">
 				<i class="mui-icon mui-icon-close"></i>
 			</div>
 		</div>
@@ -63,12 +67,32 @@
 			
 			new Vue({
 				el: '.content',
+				data: {
+					tags: ['喜剧','悲剧','爱情','动作','惊悚','科幻','动画'],
+					activeTag: ''
+				},
 				created () {
 					mui.init()
+					//在这里，接收webview被传递进来的参数，从窗口对象上哪
+					let self = plus.webview.currentWebview()
+					this.activeTag = self.tag
 				},
-				data: {
-					tags: ['喜剧','悲剧','爱情','动作','惊悚','科幻','动画']
+				methods: {
+					changeTag (tag) {//更改类型
+						this.activeTag = tag
+						if ( !this.containerWebview ) {
+							this.containerWebview = plus.webview.getWebviewById('search.html')
+						}
+						mui.fire(this.containerWebview, 'change-tag', {tag: tag})
+					},
+					closeTag () {//控制关闭窗口
+						if ( !this.containerWebview ) {
+							this.containerWebview = plus.webview.getWebviewById('search.html')
+						}
+						mui.fire(this.containerWebview, 'close-tag')
+					}
 				}
+				
 			})
 		</script>
 	</body>
